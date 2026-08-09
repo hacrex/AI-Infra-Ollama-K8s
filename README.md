@@ -1,5 +1,17 @@
 # Running Ollama and Open WebUI in a Kubernetes Cluster
 
+## Architecture Diagram
+
+```mermaid
+graph TD
+  User --> Ingress
+  Ingress --> OpenWebUI
+  OpenWebUI --> Ollama
+  Ollama -->|GPU| K8sNodes
+  Ollama -->|VectorDB| ChromaDB
+```
+
+
 
 Running Ollama and Open WebUI in a Kubernetes Cluster
 
