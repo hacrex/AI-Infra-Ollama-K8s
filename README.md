@@ -77,3 +77,8 @@ Disable OpenAI and enable Ollama configuration by modifying it to http://localho
 
 <img width="1236" alt="image" src="https://github.com/user-attachments/assets/ea8f0e9c-4d45-4980-ab54-9b93ce2a588b">
 
+
+## 🛠️ Functional Templates
+This repository includes production-ready templates to get started quickly:
+- **Terraform**: Located in `terraform/templates/` for cluster and provider setup.
+- **Kubernetes**: Located in `kubernetes/manifests/` for application deployment and security policies.
