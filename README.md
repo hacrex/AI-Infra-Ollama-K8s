@@ -1,84 +1,46 @@
-# Running Ollama and Open WebUI in a Kubernetes Cluster
+# AI Infrastructure: Ollama and Open WebUI on Kubernetes
 
-## Architecture Diagram
+This project provides a portfolio reference for running **Ollama** and **Open WebUI** in a private Kubernetes namespace. It demonstrates persistent storage, readiness and liveness probes, service discovery, ingress exposure, and an optional GPU overlay.
+
+> The default manifests are for a non-production CPU-oriented proof of concept. Run model workloads only in an isolated cluster after reviewing image provenance, model licensing, GPU availability, storage capacity, ingress authentication, and network policy requirements.
+
+## Architecture
 
 ```mermaid
-graph TD
+flowchart LR
   User --> Ingress
-  Ingress --> OpenWebUI
-  OpenWebUI --> Ollama
-  Ollama -->|GPU| K8sNodes
-  Ollama -->|VectorDB| ChromaDB
+  Ingress --> WebUI[Open WebUI]
+  WebUI --> Ollama
+  Ollama --> PVC[Persistent model storage]
 ```
 
+## Deploy
 
-
-Running Ollama and Open WebUI in a Kubernetes Cluster
-
-## Prerequisite
-
-- Docker Desktop
-- Enable Kubernetes under Settings > Kubernetes
-
-## Clone the repository
-
-```
-git clone https://github.com/ajeetraina/ollama-openwebui-kubernetes
-cd ollama-openwebui-kubernetes
+```bash
+kubectl kustomize .
+kubectl apply -k .
+kubectl get pods,svc,pvc -n ollama
 ```
 
-## Apply the Kubernetes Manifest
+Use the GPU overlay only on nodes labelled `accelerator=nvidia` with the NVIDIA device plugin installed:
 
-```
-kubectl apply -f ./
-```
-
-## Listing the Kubernetes Pods
-
-```
-kubectl get po -A
-NAMESPACE              NAME                                         READY   STATUS    RESTARTS   AGE
-kube-system            coredns-55cb58b774-n5v46                     1/1     Running   0          85m
-kube-system            coredns-55cb58b774-snwn9                     1/1     Running   0          85m
-kube-system            etcd-docker-desktop                          1/1     Running   1          85m
-kube-system            kube-apiserver-docker-desktop                1/1     Running   1          85m
-kube-system            kube-controller-manager-docker-desktop       1/1     Running   1          85m
-kube-system            kube-proxy-t9vf4                             1/1     Running   0          85m
-kube-system            kube-scheduler-docker-desktop                1/1     Running   1          85m
-kube-system            storage-provisioner                          1/1     Running   0          85m
-kube-system            vpnkit-controller                            1/1     Running   0          85m
-kubernetes-dashboard   dashboard-metrics-scraper-7cbc78bdc6-8kv8d   1/1     Running   0          80m
-kubernetes-dashboard   kubernetes-dashboard-7d748f6c6b-nfsjz        1/1     Running   0          80m
-ollama                 ollama-56c4986548-qk2r6                      2/2     Running   0          84m
-ollama                 open-webui-85799c995c-zxhgf                  1/1     Running   0          84m
+```bash
+kubectl apply -k overlays/gpu
 ```
 
+## Validate and Remove
 
-
-## Accessing the Open Web UI
-
+```bash
+kubectl rollout status deployment/ollama -n ollama
+kubectl rollout status deployment/open-webui -n ollama
+kubectl get endpoints -n ollama
+kubectl delete -k .
 ```
-kubectl port-forward svc/svc-open-webui 8080:8080 -n ollama
-```
 
-## Open Open WebUI
+## Notes
 
-Open [http://localhost:8080](http://localhost:8080) to access Open WebUI.
+- Do not commit downloaded model files or real ingress hostnames.
+- Replace the example ingress host and add TLS before any internet exposure.
+- Use a secret manager or an external secret operator for credentials in a production deployment.
 
-<img width="1185" alt="image" src="https://github.com/user-attachments/assets/e63a6d5d-9655-4ed2-b39b-2db019eca626">
-
-## Pull a model
-
-<img width="655" alt="image" src="https://github.com/user-attachments/assets/243fd811-b382-41c0-9e54-febc636c646b">
-
-## Configuration Setting
-
-Disable OpenAI and enable Ollama configuration by modifying it to http://localhost:11434
-
-<img width="1236" alt="image" src="https://github.com/user-attachments/assets/ea8f0e9c-4d45-4980-ab54-9b93ce2a588b">
-
-
-## 🛠️ Functional Templates
-This repository includes production-ready templates to get started quickly:
-- **Terraform**: Located in `terraform/templates/` for cluster and provider setup.
-- **Kubernetes**: Located in `kubernetes/manifests/` for application deployment and security policies.
+See [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for intended scope and constraints.

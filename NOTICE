@@ -1,0 +1,1 @@
+This repository was initially inspired by publicly available Kubernetes deployment examples for Ollama and Open WebUI. The maintained deployment manifests and documentation in this repository are HacRex portfolio reference material. Review container-image licenses and the policies of any model you download before operating the stack.
