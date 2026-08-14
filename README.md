@@ -1,46 +1,28 @@
-# AI Infrastructure: Ollama and Open WebUI on Kubernetes
+# Ollama and Open WebUI on Kubernetes
 
-This project provides a portfolio reference for running **Ollama** and **Open WebUI** in a private Kubernetes namespace. It demonstrates persistent storage, readiness and liveness probes, service discovery, ingress exposure, and an optional GPU overlay.
+Kubernetes manifests for running Ollama with Open WebUI. The base includes persistent storage, Services, health probes, a NetworkPolicy, and a Kustomize GPU overlay.
 
-> The default manifests are for a non-production CPU-oriented proof of concept. Run model workloads only in an isolated cluster after reviewing image provenance, model licensing, GPU availability, storage capacity, ingress authentication, and network policy requirements.
-
-## Architecture
-
-```mermaid
-flowchart LR
-  User --> Ingress
-  Ingress --> WebUI[Open WebUI]
-  WebUI --> Ollama
-  Ollama --> PVC[Persistent model storage]
-```
-
-## Deploy
+## Start with the base
 
 ```bash
-kubectl kustomize .
+./scripts/validate-manifests.sh
 kubectl apply -k .
-kubectl get pods,svc,pvc -n ollama
 ```
 
-Use the GPU overlay only on nodes labelled `accelerator=nvidia` with the NVIDIA device plugin installed:
+The base path does not publish a public ingress. Copy `examples/ingress.yaml.example` into an environment-specific overlay only after you have decided on DNS ownership, TLS, authentication, and ingress policy.
+
+## GPU nodes
+
+The GPU overlay selects nodes labelled `accelerator=nvidia` and requests `nvidia.com/gpu`.
 
 ```bash
+./scripts/preflight-gpu.sh
+kubectl kustomize overlays/gpu
 kubectl apply -k overlays/gpu
 ```
 
-## Validate and Remove
-
-```bash
-kubectl rollout status deployment/ollama -n ollama
-kubectl rollout status deployment/open-webui -n ollama
-kubectl get endpoints -n ollama
-kubectl delete -k .
-```
+The preflight only checks the current cluster; it does not install drivers or configure a device plugin. Record the model, concurrency, hardware profile, latency, and error rate before making any performance claim.
 
 ## Notes
 
-- Do not commit downloaded model files or real ingress hostnames.
-- Replace the example ingress host and add TLS before any internet exposure.
-- Use a secret manager or an external secret operator for credentials in a production deployment.
-
-See [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for intended scope and constraints.
+The Open WebUI pod is the allowed caller of the Ollama API. The model bootstrap sidecar waits for the local Ollama endpoint, then pulls `llama3.2`. Model downloads can take time and storage, so check pod logs and PVC capacity before sending users to the UI.
