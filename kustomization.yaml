@@ -5,4 +5,4 @@ resources:
   - pvc.yaml
   - services.yaml
   - deployment.yaml
-  - ingress.yaml
+  - ollama-network-policy.yaml

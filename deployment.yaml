@@ -34,14 +34,16 @@ spec:
         name: load-model
         command: ["/bin/sh", "-c"]
         args:
-          - "sleep infinity"
-        lifecycle:
-          postStart:
-            exec:
-              command:
-                - "/bin/sh"
-                - "-c"
-                - "curl -X POST http://localhost:11434/api/pull -H 'Content-Type: application/json' -d '{\"name\": \"llama3.2\"}'"
+          - |
+            until curl --fail --silent http://localhost:11434/api/tags >/dev/null; do
+              echo "Waiting for Ollama API..."
+              sleep 5
+            done
+            curl --fail --show-error -X POST http://localhost:11434/api/pull \
+              -H 'Content-Type: application/json' \
+              -d '{"name":"llama3.2"}'
+            echo "Model pull completed."
+            sleep infinity
         resources:
           limits:
             memory: 50Mi
